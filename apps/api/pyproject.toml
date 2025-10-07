@@ -19,11 +19,10 @@ pgvector = "^0.2.5"
 psycopg = {extras = ["binary"], version = "^3.1.18"}
 faiss-cpu = "^1.8.0"
 pandas = "^2.2.0"
-sqlalchemy = "^2.0.32"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.0"
-"httpx[http2]" = "^0.27.0"
+httpx[http2] = "^0.27.0"
 ruff = "^0.6.0"
 mypy = "^1.10.0"
 pre-commit = "^3.7.0"
