@@ -1,10 +1,7 @@
 from fastapi import FastAPI
 
 from .config import settings
-from .routers import chat, progress, quiz, runner
-from .services.rag.container import get_pipeline
-from .services.rag.pipeline import ingest_bulk
-from .services.rag.sample_data import SAMPLE_MODULES
+from .routers import chat, quiz, runner, progress
 
 
 def create_app() -> FastAPI:
@@ -13,14 +10,6 @@ def create_app() -> FastAPI:
     application.include_router(quiz.router, prefix="/api")
     application.include_router(runner.router, prefix="/api")
     application.include_router(progress.router, prefix="/api")
-
-    pipeline = get_pipeline()
-
-    @application.on_event("startup")
-    async def _bootstrap_rag() -> None:
-        await ingest_bulk(pipeline, SAMPLE_MODULES)
-
-    application.dependency_overrides[chat.get_rag_pipeline] = lambda: pipeline
     return application
 
 
