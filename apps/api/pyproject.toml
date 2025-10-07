@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "wahida-api"
+version = "0.1.0"
+description = "FastAPI backend for Wahidiyah Digital Assistant"
+authors = ["Wahidiyah Team <team@example.com>"]
+readme = "README.md"
+packages = [{ include = "app" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version = "^0.30.0"}
+pydantic-settings = "^2.4.0"
+httpx = "^0.27.0"
+celery = "^5.4.0"
+redis = "^5.0.0"
+openai = "^1.40.0"
+pgvector = "^0.2.5"
+psycopg = {extras = ["binary"], version = "^3.1.18"}
+faiss-cpu = "^1.8.0"
+pandas = "^2.2.0"
+sqlalchemy = "^2.0.32"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+"httpx[http2]" = "^0.27.0"
+ruff = "^0.6.0"
+mypy = "^1.10.0"
+pre-commit = "^3.7.0"
+
+[tool.poetry.scripts]
+wahida-api = "app.main:run"
+
+[build-system]
+requires = ["poetry-core>=1.8.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+strict = false
