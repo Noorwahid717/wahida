@@ -1,0 +1,17 @@
+{
+  "name": "wahida",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo for Wahidiyah Digital Assistant",
+  "workspaces": [
+    "apps/frontend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm --prefix apps/frontend run dev",
+    "build:frontend": "npm --prefix apps/frontend run build",
+    "lint:frontend": "npm --prefix apps/frontend run lint"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.1"
+  }
+}

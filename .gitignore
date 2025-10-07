@@ -1,0 +1,25 @@
+# Node
+node_modules/
+*.log
+.next/
+out/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.env
+.env.*
+
+# Poetry
+poetry.lock
+
+# Mac/Editor
+.DS_Store
+.idea/
+.vscode/
