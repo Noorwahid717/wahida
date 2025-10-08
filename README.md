@@ -12,26 +12,37 @@ Wahidiyah Digital Assistant
 
 ## Menjalankan Proyek
 
-### Prasyarat
-
-* Node.js 18+ dan npm.
-* Python 3.11.
-* Poetry (`pipx install poetry`).
-
-### Perintah Umum
+### Pilihan 1 – Docker Compose (disarankan)
 
 ```bash
-# Instal dependensi root (turbo) dan frontend
-npm install
-npm --prefix apps/frontend install
+docker compose up --build
+```
 
-# Menjalankan frontend Next.js
-npm run dev:frontend
+Setelah perintah di atas:
 
-# Menjalankan backend FastAPI
+* FastAPI tersedia di [http://localhost:8000](http://localhost:8000)
+* Next.js tersedia di [http://localhost:3000](http://localhost:3000)
+
+### Pilihan 2 – Lokal Manual
+
+Prasyarat: Node.js 18+, pnpm, Python 3.11, Poetry.
+
+```bash
+# Backend
 cd apps/api
 poetry install
 poetry run uvicorn app.main:app --reload
+
+# Frontend
+cd ../frontend
+pnpm install
+pnpm dev
+```
+
+### Ingest Konten Markdown
+
+```bash
+poetry run python scripts/ingest_markdown.py --content-dir content --faiss-path data/faiss/index.bin
 ```
 
 ## Arsitektur MVP → Produksi

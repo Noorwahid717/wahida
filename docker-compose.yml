@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: ankane/pgvector:latest
+    environment:
+      POSTGRES_DB: wahida
+      POSTGRES_USER: wahida
+      POSTGRES_PASSWORD: wahida
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
+    command: ["-c", "config_file=/etc/postgresql/postgresql.conf"]
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  judge0:
+    image: judge0/judge0:1.13.1
+    environment:
+      - DISABLE_SANDBOX=false
+      - JUDGE0_SERVER_NAME=wahida
+    ports:
+      - "2358:2358"
+
+  api:
+    build:
+      context: ./apps/api
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      APP_NAME=Wahida API
+      BACKEND_CORS_ORIGINS=http://localhost:3000
+      POSTGRES_DSN=postgresql+psycopg://wahida:wahida@postgres:5432/wahida
+      REDIS_URL=redis://redis:6379/0
+      JUDGE0_URL=http://judge0:2358
+    volumes:
+      - ./apps/api:/app
+      - ./content:/content:ro
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ./apps/frontend
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+    volumes:
+      - ./apps/frontend:/app
+      - ./content:/content:ro
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres-data:
