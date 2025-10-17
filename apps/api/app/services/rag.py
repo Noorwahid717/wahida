@@ -9,7 +9,10 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 import faiss
+import google.generativeai as genai
 import numpy as np
+
+from app.core.config import settings
 
 
 @dataclass(slots=True)
@@ -119,6 +122,23 @@ class RagService:
                 payloads = json.loads(payload_file.read_text(encoding="utf-8"))
                 service._chunks = [ChunkPayload(**payload) for payload in payloads]
         return service
+
+    def generate_response(self, query: str, retrieved_chunks: list[RetrievedChunk]) -> str:
+        """Generate adaptive response using Google Gemini based on retrieved chunks."""
+        if not settings.google_gemini_api_key:
+            return "LLM not configured. Retrieved chunks: " + "; ".join([c.text for c in retrieved_chunks])
+
+        genai.configure(api_key=settings.google_gemini_api_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+
+        context = "\n".join([f"- {chunk.text} (metadata: {chunk.metadata})" for chunk in retrieved_chunks])
+        prompt = f"Based on the following context, answer the query adaptively:\n\nContext:\n{context}\n\nQuery: {query}\n\nProvide a helpful, educational response."
+
+        try:
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            return f"Error generating response: {str(e)}. Retrieved chunks: " + "; ".join([c.text for c in retrieved_chunks])
 
 
 __all__ = ["ChunkPayload", "RetrievedChunk", "RagService"]

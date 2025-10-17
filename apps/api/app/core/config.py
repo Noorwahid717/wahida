@@ -23,10 +23,13 @@ class Settings(BaseSettings):
     redis_url: str | None = None
     judge0_url: str | None = None
     openai_api_key: str | None = None
+    google_gemini_api_key: str | None = None
     posthog_api_key: str | None = None
     moderation_blocklist_path: Path | None = None
     rate_limit_per_minute_chat: int = 20
     rate_limit_per_minute_run: int = 10
+    supabase_url: str | None = None
+    supabase_anon_key: str | None = None
 
 
 @lru_cache()

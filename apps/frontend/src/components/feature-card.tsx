@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -6,14 +7,15 @@ interface FeatureCardProps {
   title: string;
   description: string;
   icon: ReactNode;
+  href?: string;
   className?: string;
 }
 
-export function FeatureCard({ title, description, icon, className }: FeatureCardProps) {
-  return (
+export function FeatureCard({ title, description, icon, href, className }: FeatureCardProps) {
+  const content = (
     <div
       className={cn(
-        "rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur shadow-lg",
+        "rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur shadow-lg cursor-pointer transition-all hover:shadow-xl hover:scale-105",
         "dark:bg-slate-900/40 dark:border-slate-700/60",
         className,
       )}
@@ -29,4 +31,10 @@ export function FeatureCard({ title, description, icon, className }: FeatureCard
       </div>
     </div>
   );
+
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
+
+  return content;
 }

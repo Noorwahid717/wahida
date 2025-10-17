@@ -36,21 +36,25 @@ export default function Home() {
             title="Chat Tutor"
             description="Streaming respons via SSE/WebSocket dengan pipeline RAG, moderation, dan PostHog logging."
             icon={<MessageCircle className="h-6 w-6" />}
+            href="/chat"
           />
           <FeatureCard
             title="Kuis Adaptif"
             description="Bank soal terstruktur dengan penilaian cepat, rekomendasi remedial, dan leaderboard kelas."
             icon={<Trophy className="h-6 w-6" />}
+            href="/quiz"
           />
           <FeatureCard
             title="Sandbox Kode"
             description="Eksekusi Python aman via Judge0/Docker + Celery queue dan audit trail di Postgres."
             icon={<Cpu className="h-6 w-6" />}
+            href="/run"
           />
           <FeatureCard
-            title="Progres & Badge"
-            description="Pelacakan streak, badge, dan ringkasan guru yang terintegrasi dengan PostHog dan Supabase."
+            title="Progres & Analitik"
+            description="Dashboard real-time dengan streak, badge, dan insight pembelajaran via PostHog."
             icon={<ChartSpline className="h-6 w-6" />}
+            href="/progress"
           />
         </section>
 

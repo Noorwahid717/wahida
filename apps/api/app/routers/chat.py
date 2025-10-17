@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.core import RateLimitExceeded
+from app.core.auth import get_current_user
 from app.services.hint_policy import HintPolicy, HintState
 from app.services.rag import RagService
 
@@ -64,10 +65,19 @@ async def _generate_events(
         }
         yield f"data: {json.dumps(chunk_payload, ensure_ascii=False)}\n\n"
         await asyncio.sleep(0.05)
+
+    # Generate adaptive response using LLM
+    llm_response = rag_service.generate_response(payload.message, retrieved)
+    yield f"data: {json.dumps({'type': 'response', 'text': llm_response}, ensure_ascii=False)}\n\n"
+
     yield "event: status\n" "data: {\"type\": \"completed\"}\n\n"
 
 
-@router.post("/", response_class=StreamingResponse)
+@router.post(
+    "/",
+    response_class=StreamingResponse,
+    dependencies=[Depends(get_current_user)],
+)
 async def create_chat_completion(
     payload: ModeratedChatRequest,
     request: Request,

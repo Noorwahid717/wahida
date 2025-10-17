@@ -14,7 +14,15 @@ interface RetrievedChunk {
   hintsRevealed: number;
 }
 
-async function streamChat(message: string, onChunk: (chunk: RetrievedChunk) => void) {
+interface LLMResponse {
+  text: string;
+}
+
+async function streamChat(
+  message: string,
+  onChunk: (chunk: RetrievedChunk) => void,
+  onResponse: (response: LLMResponse) => void
+) {
   const response = await fetch(`${API_BASE_URL}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -37,6 +45,8 @@ async function streamChat(message: string, onChunk: (chunk: RetrievedChunk) => v
         const payload = JSON.parse(event.replace(/^data:\s*/, ""));
         if (payload.type === "chunk") {
           onChunk(payload as RetrievedChunk);
+        } else if (payload.type === "response") {
+          onResponse(payload as LLMResponse);
         }
       }
     }
@@ -46,6 +56,7 @@ async function streamChat(message: string, onChunk: (chunk: RetrievedChunk) => v
 export default function ChatPage() {
   const [input, setInput] = useState("");
   const [chunks, setChunks] = useState<RetrievedChunk[]>([]);
+  const [llmResponse, setLlmResponse] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hints = chunks.map((chunk) => chunk.text.slice(0, 120));
@@ -58,10 +69,15 @@ export default function ChatPage() {
     setLoading(true);
     try {
       let emitted = false;
-      await streamChat(input, (chunk) => {
-        emitted = true;
-        setChunks((prev) => [...prev, chunk]);
-      });
+      await streamChat(
+        input,
+        (chunk) => {
+          setChunks((prev) => [...prev, chunk]);
+        },
+        (response) => {
+          setLlmResponse(response.text);
+        }
+      );
       if (!emitted) {
         setChunks([
           {
@@ -123,6 +139,12 @@ export default function ChatPage() {
               {chunks.length === 0 && !loading && <li className="text-xs text-slate-400">Kirim pertanyaan untuk melihat referensi.</li>}
             </ul>
           </section>
+          {llmResponse && (
+            <section className="rounded-lg border border-green-200 bg-green-50 p-4 shadow-sm">
+              <h2 className="text-lg font-semibold text-green-800">Respons AI</h2>
+              <p className="mt-2 text-sm text-green-700">{llmResponse}</p>
+            </section>
+          )}
           <CodeRunner />
         </div>
         <div className="space-y-4">

@@ -8,6 +8,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from app.core import RateLimiter, settings
 from app.routers import chat, progress, quiz, run as run_router
@@ -50,6 +51,7 @@ def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     application = FastAPI(title=settings.app_name, lifespan=lifespan)
+    FastAPIInstrumentor.instrument_app(application)
     application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.backend_cors_origins,
