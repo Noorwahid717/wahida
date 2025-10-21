@@ -8,5 +8,14 @@ if ! command -v poetry >/dev/null 2>&1; then
     pip install --no-cache-dir poetry
 fi
 
-cd apps/api
+# Adjust working directory when repo root is mounted; Leapcell may already set root to apps/api
+if [ -d "apps/api" ]; then
+    cd apps/api
+elif [ -f "pyproject.toml" ]; then
+    : "already at project root"
+else
+    echo "pyproject.toml not found; aborting" >&2
+    exit 1
+fi
+
 poetry install --no-interaction --no-root
