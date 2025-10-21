@@ -1,6 +1,7 @@
 
 # --- Builder stage ---
 
+
 FROM python:3.11-slim AS base
 
 ENV POETRY_VERSION=1.8.3 \
@@ -8,10 +9,12 @@ ENV POETRY_VERSION=1.8.3 \
     POETRY_VIRTUALENVS_CREATE=false \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/opt/poetry/bin:$PATH"
+    PATH="/opt/poetry/bin:$PATH:/root/.local/bin:$PATH"
 
+# Install poetry globally so it is available for Leapcell build command
 RUN apt-get update && apt-get install -y build-essential curl && rm -rf /var/lib/apt/lists/* \
-    && curl -sSL https://install.python-poetry.org | python -
+    && curl -sSL https://install.python-poetry.org | python3 - \
+    && ln -s /root/.local/bin/poetry /usr/local/bin/poetry
 
 WORKDIR /app
 
