@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import hashlib
+import httpx
 import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Sequence
 
 import faiss
-import google.generativeai as genai
 import numpy as np
+from openai import OpenAI
 
 from app.core.config import settings
 
@@ -44,16 +45,22 @@ class RagService:
 
     @staticmethod
     def _embed(text: str, dimension: int) -> np.ndarray:
-        tokens = text.lower().split()
-        vector = np.zeros(dimension, dtype="float32")
-        for token in tokens:
-            token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
-            bucket = int(token_hash, 16) % dimension
-            vector[bucket] += 1.0
-        norm = np.linalg.norm(vector)
-        if norm == 0:
-            return vector
-        return vector / norm
+        if settings.openai_api_key:
+            client = OpenAI(api_key=settings.openai_api_key)
+            response = client.embeddings.create(
+                input=text,
+                model="text-embedding-3-small"
+            )
+            return np.array(response.data[0].embedding, dtype="float32")
+        else:
+            # Fallback to dummy hash
+            tokens = text.lower().split()
+            vector = np.zeros(dimension, dtype="float32")
+            for token in tokens:
+                token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+                index = int(token_hash[:8], 16) % dimension
+                vector[index] += 1
+            return vector / np.linalg.norm(vector) if np.linalg.norm(vector) > 0 else vector
 
     def index(self, payloads: Iterable[ChunkPayload]) -> None:
         """Add chunks to the FAISS index."""
@@ -123,22 +130,56 @@ class RagService:
                 service._chunks = [ChunkPayload(**payload) for payload in payloads]
         return service
 
-    def generate_response(self, query: str, retrieved_chunks: list[RetrievedChunk]) -> str:
-        """Generate adaptive response using Google Gemini based on retrieved chunks."""
+    async def generate_response(self, query: str, retrieved_chunks: list[RetrievedChunk]) -> str:
+        """Generate adaptive response using Google Gemini API directly."""
         if not settings.google_gemini_api_key:
             return "LLM not configured. Retrieved chunks: " + "; ".join([c.text for c in retrieved_chunks])
 
-        genai.configure(api_key=settings.google_gemini_api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
-
-        context = "\n".join([f"- {chunk.text} (metadata: {chunk.metadata})" for chunk in retrieved_chunks])
-        prompt = f"Based on the following context, answer the query adaptively:\n\nContext:\n{context}\n\nQuery: {query}\n\nProvide a helpful, educational response."
-
         try:
-            response = model.generate_content(prompt)
-            return response.text
+            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={settings.google_gemini_api_key}"
+            system_prompt = """Anda adalah Tutor Informatika untuk siswa SMA.
+Tugas: jelaskan konsep dengan bahasa sederhana, gunakan analogi keseharian,
+berikan contoh kode Python kecil, dan latihan 5–10 menit.
+Jangan selesaikan PR penuh; aktifkan "hint policy".
+Tunjukkan langkah berpikir, sebutkan kesalahan umum, dan tutup dengan refleksi.
+Jika topik di luar konteks, katakan tidak yakin dan sarankan eksperimen aman.
+Di akhir respons: berikan 1–2 latihan dan 1 pertanyaan refleksi."""
+
+            context = "\n".join([f"- {chunk.text} (metadata: {chunk.metadata})" for chunk in retrieved_chunks])
+            prompt = f"{system_prompt}\n\nBased on the following context, answer the query adaptively:\n\nContext:\n{context}\n\nQuery: {query}\n\nProvide a helpful, educational response."
+
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}]
+            }
+
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=30.0)
+                response.raise_for_status()
+                data = response.json()
+
+            if "candidates" in data and data["candidates"]:
+                return data["candidates"][0]["content"]["parts"][0]["text"]
+            else:
+                return f"No response from Gemini. Retrieved chunks: " + "; ".join([c.text for c in retrieved_chunks])
+
         except Exception as e:
-            return f"Error generating response: {str(e)}. Retrieved chunks: " + "; ".join([c.text for c in retrieved_chunks])
+            return f"Error calling Gemini API: {str(e)}. Retrieved chunks: " + "; ".join([c.text for c in retrieved_chunks])
+
+
+# Celery task
+from app.celery_app import celery_app
+
+@celery_app.task
+def embed_text(text: str) -> list[float]:
+    """Embed text using OpenAI."""
+    if not settings.openai_api_key:
+        raise ValueError("OpenAI API key not configured")
+    client = OpenAI(api_key=settings.openai_api_key)
+    response = client.embeddings.create(
+        input=text,
+        model="text-embedding-3-small"
+    )
+    return response.data[0].embedding
 
 
 __all__ = ["ChunkPayload", "RetrievedChunk", "RagService"]

@@ -5,7 +5,7 @@ from __future__ import annotations
 import enum
 import uuid
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Optional
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
@@ -58,14 +58,14 @@ class User(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(Enum(UserRole, name="user_role"), nullable=False)
-    class_id: Mapped[uuid.UUID | None] = mapped_column(
+    class_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("classes.id", ondelete="SET NULL"), nullable=True
     )
     email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
 
-    classroom: Mapped[ClassRoom | None] = relationship(back_populates="users")
+    classroom: Mapped[Optional[ClassRoom]] = relationship(back_populates="users")
     attempts: Mapped[list["Attempt"]] = relationship(back_populates="user")
-    streak: Mapped["Streak" | None] = relationship(back_populates="user", uselist=False)
+    streak: Mapped[Optional["Streak"]] = relationship(back_populates="user", uselist=False)
     badges: Mapped[list["UserBadge"]] = relationship(back_populates="user")
     events: Mapped[list["AnalyticsEvent"]] = relationship(back_populates="user")
 
@@ -78,7 +78,7 @@ class Content(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    class_id: Mapped[uuid.UUID | None] = mapped_column(
+    class_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("classes.id", ondelete="SET NULL"), nullable=True
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -88,7 +88,7 @@ class Content(Base):
     md_url: Mapped[str] = mapped_column(String(512), nullable=False)
     tokens: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    classroom: Mapped[ClassRoom | None] = relationship(back_populates="contents")
+    classroom: Mapped[Optional[ClassRoom]] = relationship(back_populates="contents")
     chunks: Mapped[list["Chunk"]] = relationship(back_populates="content")
 
 
@@ -109,10 +109,10 @@ class Chunk(Base):
     ord: Mapped[int] = mapped_column(Integer, nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
     tokens: Mapped[int] = mapped_column(Integer, nullable=False)
-    metadata: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    chunk_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
 
     content: Mapped[Content] = relationship(back_populates="chunks")
-    embedding: Mapped["Embedding" | None] = relationship(back_populates="chunk", uselist=False)
+    embedding: Mapped[Optional["Embedding"]] = relationship(back_populates="chunk", uselist=False)
 
 
 class Embedding(Base):
@@ -168,9 +168,9 @@ class Attempt(Base):
         UUID(as_uuid=True), ForeignKey("exercises.id", ondelete="CASCADE"), nullable=False
     )
     score: Mapped[int] = mapped_column(Integer, nullable=False)
-    feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
+    feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user: Mapped[User] = relationship(back_populates="attempts")
     exercise: Mapped[Exercise] = relationship(back_populates="attempts")
@@ -186,7 +186,7 @@ class Streak(Base):
     )
     current: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     longest: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    last_day_done: Mapped[date | None] = mapped_column(Date, nullable=True)
+    last_day_done: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     user: Mapped[User] = relationship(back_populates="streak")
 
@@ -237,14 +237,14 @@ class AnalyticsEvent(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    user_id: Mapped[uuid.UUID | None] = mapped_column(
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     event_name: Mapped[str] = mapped_column(String(255), nullable=False)
     props: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
-    user: Mapped[User | None] = relationship(back_populates="events")
+    user: Mapped[Optional[User]] = relationship(back_populates="events")
 
 
 __all__ = [

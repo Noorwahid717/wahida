@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Connection Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <div id="status">Testing connection...</div>
+    <button id="testBtn">Test Signup</button>
+    <div id="result"></div>
+
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://gyyiuhgcbggxzozasfji.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5eWl1aGdjYmdneHpvemFzZmppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwNTk5NjIsImV4cCI6MjA3NDYzNTk2Mn0.vumFtnaPhkZEosWAPlK01OHYWe-C_mAUhV_b6N0lMLE';
+
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        const statusDiv = document.getElementById('status');
+        const resultDiv = document.getElementById('result');
+        const testBtn = document.getElementById('testBtn');
+
+        // Test basic connection
+        async function testConnection() {
+            try {
+                statusDiv.textContent = 'Testing connection...';
+
+                // Test auth state
+                const { data, error } = await supabase.auth.getSession();
+
+                if (error) {
+                    statusDiv.innerHTML = `<span style="color: red;">❌ Connection Error: ${error.message}</span>`;
+                } else {
+                    statusDiv.innerHTML = `<span style="color: green;">✅ Supabase Connected Successfully!</span>`;
+                }
+
+                resultDiv.innerHTML = `
+                    <h3>Connection Details:</h3>
+                    <ul>
+                        <li>URL: ${supabaseUrl}</li>
+                        <li>Session: ${data.session ? 'Active' : 'None'}</li>
+                        <li>User: ${data.session?.user?.email || 'None'}</li>
+                    </ul>
+                `;
+
+            } catch (err) {
+                statusDiv.innerHTML = `<span style="color: red;">❌ Error: ${err.message}</span>`;
+                console.error('Connection test failed:', err);
+            }
+        }
+
+        // Test signup
+        async function testSignup() {
+            try {
+                resultDiv.innerHTML = 'Testing signup...';
+
+                const testEmail = `test${Date.now()}@example.com`;
+                const testPassword = 'testpassword123';
+
+                const { data, error } = await supabase.auth.signUp({
+                    email: testEmail,
+                    password: testPassword
+                });
+
+                if (error) {
+                    resultDiv.innerHTML = `<span style="color: red;">❌ Signup Error: ${error.message}</span>`;
+                } else {
+                    resultDiv.innerHTML = `
+                        <span style="color: green;">✅ Signup Successful!</span>
+                        <br>Test user created: ${testEmail}
+                        <br>User ID: ${data.user?.id || 'N/A'}
+                        <br>Email confirmed: ${data.user?.email_confirmed_at ? 'Yes' : 'No'}
+                    `;
+                }
+
+            } catch (err) {
+                resultDiv.innerHTML = `<span style="color: red;">❌ Signup Test Failed: ${err.message}</span>`;
+                console.error('Signup test failed:', err);
+            }
+        }
+
+        // Run initial test
+        testConnection();
+
+        // Add event listener
+        testBtn.addEventListener('click', testSignup);
+    </script>
+</body>
+</html>

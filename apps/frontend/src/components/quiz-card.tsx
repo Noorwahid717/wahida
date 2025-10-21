@@ -2,7 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, authenticatedFetch } from "@/lib/api";
 
 interface QuizCardProps {
   questionId: string;
@@ -11,9 +11,8 @@ interface QuizCardProps {
 }
 
 async function submitAnswer(questionId: string, selectedIndex: number) {
-  const response = await fetch(`${API_BASE_URL}/api/quiz/${questionId}`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/quiz/${questionId}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ question_id: questionId, selected_index: selectedIndex }),
   });
   if (!response.ok) {
@@ -28,15 +27,15 @@ export function QuizCard({ questionId, prompt, choices }: QuizCardProps) {
   });
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-slate-800">{prompt}</h3>
+    <article className="rounded-lg border bg-card p-6 shadow-sm">
+      <h3 className="text-lg font-semibold text-card-foreground">{prompt}</h3>
       <ul className="mt-4 space-y-3">
         {choices.map((choice, idx) => (
           <li key={idx}>
             <button
               type="button"
               onClick={() => mutation.mutate({ choice: idx })}
-              className="w-full rounded-md border border-slate-200 px-4 py-3 text-left text-sm hover:bg-slate-50"
+              className="w-full rounded-md border bg-background px-4 py-3 text-left text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               {choice}
             </button>
@@ -44,11 +43,11 @@ export function QuizCard({ questionId, prompt, choices }: QuizCardProps) {
         ))}
       </ul>
       {mutation.isSuccess && (
-        <p className={`mt-4 text-sm font-medium ${mutation.data.correct ? "text-emerald-600" : "text-red-500"}`}>
+        <p className={`mt-4 text-sm font-medium ${mutation.data.correct ? "text-green-600 dark:text-green-400" : "text-destructive"}`}>
           {mutation.data.correct ? "Jawaban benar!" : "Belum tepat, coba lagi."}
         </p>
       )}
-      {mutation.isError && <p className="mt-4 text-xs text-red-500">Gagal menilai jawaban.</p>}
+      {mutation.isError && <p className="mt-4 text-xs text-destructive">Gagal menilai jawaban.</p>}
     </article>
   );
 }

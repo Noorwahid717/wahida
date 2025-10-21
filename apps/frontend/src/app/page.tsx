@@ -10,14 +10,31 @@ export default function Home() {
         <section className="rounded-3xl border border-slate-200/80 bg-white/80 p-10 shadow-xl backdrop-blur-lg dark:border-slate-800 dark:bg-slate-900/70">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-4">
-              <span className="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-4 py-1 text-sm font-medium text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200">
+              <span className="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-4 py-1 text-sm font-medium text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200" title="Minimum Viable Product - siap untuk penggunaan awal">
                 <Sparkles className="h-4 w-4" /> MVP siap dipakai
               </span>
-              <h1 className="text-4xl font-bold sm:text-5xl">Wahidiyah Digital Assistant</h1>
+              <h1 className="text-4xl font-bold sm:text-5xl">🚀 Wahidiyah Digital Assistant</h1>
               <p className="max-w-2xl text-lg text-slate-600 dark:text-slate-200/80">
                 Tutoring cerdas dengan materi adaptif, latihan interaktif, dan analitik progres real-time.
                 Integrasi Next.js, FastAPI, RAG, dan pipeline eksekusi kode siap dikembangkan bertahap.
               </p>
+              <div className="flex flex-wrap gap-3 mt-6">
+                <a href="/auth" className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                  Sign In
+                </a>
+                <a href="/chat" className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-700">
+                  <MessageCircle className="h-4 w-4" />
+                  Mulai Belajar
+                </a>
+                <a href="/quiz" className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                  <Trophy className="h-4 w-4" />
+                  Coba Kuis
+                </a>
+                <a href="/run" className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                  <Cpu className="h-4 w-4" />
+                  Sandbox Kode
+                </a>
+              </div>
             </div>
             <div className="h-40 w-full max-w-sm rounded-2xl border border-indigo-200 bg-indigo-50/80 p-4 text-indigo-900 shadow-inner dark:border-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-100">
               <p className="text-sm uppercase tracking-wide">Stack highlight</p>
@@ -31,7 +48,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
           <FeatureCard
             title="Chat Tutor"
             description="Streaming respons via SSE/WebSocket dengan pipeline RAG, moderation, dan PostHog logging."
@@ -56,6 +73,53 @@ export default function Home() {
             icon={<ChartSpline className="h-6 w-6" />}
             href="/progress"
           />
+        </section>
+
+        <section className="grid gap-8 lg:grid-cols-[2fr_1fr]">
+          <div className="rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-900/70">
+            <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Alur Integrasi Backend</h2>
+            <ol className="mt-6 space-y-4 text-sm text-slate-600 dark:text-slate-200/80">
+              <li className="flex gap-3">
+                <span className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-xs font-semibold text-white">
+                  1
+                </span>
+                <div>
+                  <p className="font-medium">FastAPI Router</p>
+                  <p>Endpoint `/chat`, `/quiz`, `/run`, dan `/progress` sudah terdaftar untuk iterasi berikutnya.</p>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-xs font-semibold text-white">
+                  2
+                </span>
+                <div>
+                  <p className="font-medium">Queue & Worker</p>
+                  <p>Celery + Redis siap dihubungkan untuk eksekusi kode dan batch embedding.</p>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-xs font-semibold text-white">
+                  3
+                </span>
+                <div>
+                  <p className="font-medium">Observability</p>
+                  <p>PostHog, OpenTelemetry, dan guard moderasi dapat dipasang mengikuti struktur ini.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+          <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-900/70">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Snapshot Progres</h2>
+            <ProgressChart />
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-slate-200/80 bg-white/80 p-8 shadow-xl backdrop-blur-lg dark:border-slate-800 dark:bg-slate-900/70 text-center">
+          <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">🔥 Streak Harian</h2>
+          <div className="w-full bg-slate-200 rounded-full h-4 dark:bg-slate-700">
+            <div className="bg-gradient-to-r from-orange-400 to-red-500 h-4 rounded-full" style={{ width: '70%' }}></div>
+          </div>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-200">7 hari berturut-turut! Terus belajar untuk unlock badge baru.</p>
         </section>
 
         <section className="grid gap-8 lg:grid-cols-[2fr_1fr]">

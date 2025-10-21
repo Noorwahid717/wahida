@@ -3,32 +3,45 @@
 from __future__ import annotations
 
 import json
-from contextlib import asynccontextmanager
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
+# Load environment variables
+env_file_path = Path(__file__).parent.parent.parent / ".env"
+load_dotenv(env_file_path)
 
 from app.core import RateLimiter, settings
+# from app.core import RateLimiter, settings, Base, SessionLocal, get_db
 from app.routers import chat, progress, quiz, run as run_router
 from app.services.hint_policy import HintPolicy
 from app.services.rag import RagService, ChunkPayload
 
+def create_app() -> FastAPI:
+    application = FastAPI(title=settings.app_name)  # Removed lifespan for debugging
+    # FastAPIInstrumentor.instrument_app(application)  # Commented out for debugging
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.backend_cors_origins.split(","),
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-@asynccontextmanager
-def lifespan(app: FastAPI):
+    # Manual setup since lifespan removed
     moderation_blocklist = {"hack", "exploit", "porn", "radikal"}
-    if settings.moderation_blocklist_path and Path(settings.moderation_blocklist_path).exists():
+    if settings.moderation_blocklist_path and settings.moderation_blocklist_path.strip() and Path(settings.moderation_blocklist_path).exists():
         moderation_blocklist = set(
             json.loads(Path(settings.moderation_blocklist_path).read_text(encoding="utf-8"))
         )
-    app.state.moderation_blocklist = moderation_blocklist
-    app.state.rate_limiters = {
+    application.state.moderation_blocklist = moderation_blocklist
+    application.state.rate_limiters = {
         "chat": RateLimiter(settings.rate_limit_per_minute_chat, 60),
         "run": RateLimiter(settings.rate_limit_per_minute_run, 60),
     }
-    app.state.hint_policy = HintPolicy()
+    application.state.hint_policy = HintPolicy()
 
     index_path = Path("data/faiss/index.bin")
     rag_service = RagService.load(index_path)
@@ -41,24 +54,7 @@ def lifespan(app: FastAPI):
             )
         ]
         rag_service.index(seed_chunks)
-    app.state.rag_service = rag_service
-    try:
-        yield
-    finally:
-        index_path.parent.mkdir(parents=True, exist_ok=True)
-        rag_service.dump(index_path)
-
-
-def create_app() -> FastAPI:
-    application = FastAPI(title=settings.app_name, lifespan=lifespan)
-    FastAPIInstrumentor.instrument_app(application)
-    application.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.backend_cors_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    application.state.rag_service = rag_service
 
     @application.get("/healthz")
     async def health_check() -> dict[str, str]:

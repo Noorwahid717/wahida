@@ -1,11 +1,13 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useRef, useEffect } from "react";
 
 import { CodeRunner } from "@/components/code-runner";
 import { HintPanel } from "@/components/hint-panel";
 import { QuizCard } from "@/components/quiz-card";
-import { API_BASE_URL } from "@/lib/api";
+import { AuthGuard } from "@/components/auth-guard";
+import { API_BASE_URL, authenticatedFetch } from "@/lib/api";
+import { Loader2, User, Bot } from "lucide-react";
 
 interface RetrievedChunk {
   text: string;
@@ -20,12 +22,11 @@ interface LLMResponse {
 
 async function streamChat(
   message: string,
-  onChunk: (chunk: RetrievedChunk) => void,
-  onResponse: (response: LLMResponse) => void
+  onChunk: (retrievedChunk: RetrievedChunk) => void,
+  onResponse: (llmResponse: LLMResponse) => void
 ) {
-  const response = await fetch(`${API_BASE_URL}/api/chat`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message }),
   });
   if (!response.body) {
@@ -60,6 +61,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hints = chunks.map((chunk) => chunk.text.slice(0, 120));
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -68,7 +70,6 @@ export default function ChatPage() {
     setError(null);
     setLoading(true);
     try {
-      let emitted = false;
       await streamChat(
         input,
         (chunk) => {
@@ -78,84 +79,88 @@ export default function ChatPage() {
           setLlmResponse(response.text);
         }
       );
-      if (!emitted) {
-        setChunks([
-          {
-            text: "Tidak ada respons dari server. Gunakan konsep dasar: bentukkan persamaan dan susun ulang variabel.",
-            metadata: { topik: "Fallback" },
-            score: 0,
-            hintsRevealed: 1,
-          },
-        ]);
-      }
+      setLoading(false);
     } catch {
       setError("Gagal menghubungi tutor. Coba lagi nanti.");
-      setChunks([
-        {
-          text: "Gunakan sifat distributif dan kumpulkan variabel di satu sisi persamaan.",
-          metadata: { topik: "Fallback" },
-          score: 0,
-          hintsRevealed: 1,
-        },
-      ]);
-    } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [chunks, llmResponse]);
+
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-12">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-bold text-slate-900">Chat Tutor</h1>
-        <p className="text-sm text-slate-600">Streaming SSE dari FastAPI dengan moderasi dan rate limit.</p>
-      </header>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <textarea
-          placeholder="Tulis pertanyaanmu..."
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          className="min-h-[120px] w-full rounded-md border border-slate-200 p-3 text-sm"
-        />
-        <button
-          type="submit"
-          className="self-end rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-          disabled={loading}
-        >
-          {loading ? "Memproses..." : "Kirim"}
-        </button>
-      </form>
-      <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
-        <div className="space-y-4">
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-800">Ringkasan sumber</h2>
-            {error && <p className="text-xs text-red-500">{error}</p>}
-            <ul className="mt-2 space-y-2 text-sm text-slate-600">
-              {chunks.map((chunk, idx) => (
-                <li key={idx} className="rounded-md bg-slate-100 p-3">
-                  <p className="font-medium text-slate-700">{chunk.metadata.topik ?? "Referensi"}</p>
-                  <p>{chunk.text}</p>
-                </li>
-              ))}
-              {chunks.length === 0 && !loading && <li className="text-xs text-slate-400">Kirim pertanyaan untuk melihat referensi.</li>}
-            </ul>
-          </section>
-          {llmResponse && (
-            <section className="rounded-lg border border-green-200 bg-green-50 p-4 shadow-sm">
-              <h2 className="text-lg font-semibold text-green-800">Respons AI</h2>
-              <p className="mt-2 text-sm text-green-700">{llmResponse}</p>
+    <AuthGuard>
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-12">
+        <header className="space-y-2">
+          <h1 className="text-4xl font-extrabold text-foreground">Chat Tutor</h1>
+          <p className="text-base text-muted-foreground">Streaming SSE dari FastAPI dengan moderasi dan rate limit.</p>
+        </header>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-lg border bg-card p-6 shadow-sm">
+          <div className="flex items-start gap-3">
+            <User className="h-6 w-6 text-primary mt-1" />
+            <textarea
+              placeholder="Tulis pertanyaanmu..."
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              className="flex-1 min-h-[150px] w-full rounded-md border border-input bg-background p-4 text-sm text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+          <button
+            type="submit"
+            className="self-end rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 flex items-center gap-2"
+            disabled={loading}
+          >
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {loading ? "Memproses..." : "Kirim"}
+          </button>
+        </form>
+        <div className="grid gap-6 md:grid-cols-[3fr_1fr]" ref={scrollRef}>
+          <div className="space-y-6">
+            <section className="rounded-lg border bg-card p-6 shadow-sm">
+              <h2 className="text-xl font-semibold text-card-foreground flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" />
+                Ringkasan sumber
+              </h2>
+              {error && <p className="text-xs text-destructive">{error}</p>}
+              <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
+                {chunks.map((chunk, idx) => (
+                  <li key={idx} className="rounded-md bg-muted p-3">
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-5 w-5 text-muted-foreground" />
+                      <p className="font-medium text-foreground">{chunk.metadata.topik ?? "Referensi"}</p>
+                    </div>
+                    <p className="text-muted-foreground">{chunk.text}</p>
+                  </li>
+                ))}
+                {chunks.length === 0 && !loading && <li className="text-xs text-muted-foreground">Kirim pertanyaan untuk melihat referensi.</li>}
+              </ul>
             </section>
-          )}
-          <CodeRunner />
-        </div>
-        <div className="space-y-4">
-          <HintPanel hints={hints.length ? hints : ["Mulai dengan memahami apa yang ditanya soalmu."]} />
-          <QuizCard
-            questionId="intro-python"
-            prompt="Apa output dari print(1 + 1)?"
-            choices={["11", "2", "'1 + 1'"]}
-          />
+            {llmResponse && (
+              <section className="rounded-lg border bg-card p-6 shadow-sm">
+                <h2 className="text-xl font-semibold text-card-foreground flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-primary" />
+                  Respons AI
+                </h2>
+                <p className="mt-3 text-sm text-card-foreground leading-relaxed">{llmResponse}</p>
+              </section>
+            )}
+            <div ref={scrollRef} />
+            <CodeRunner />
+          </div>
+          <div className="space-y-4 bg-muted p-4 rounded-lg">
+            <HintPanel hints={hints.length ? hints : ["Mulai dengan memahami apa yang ditanya soalmu."]} />
+            <QuizCard
+              questionId="intro-python"
+              prompt="Apa output dari print(1 + 1)?"
+              choices={["11", "2", "'1 + 1'"]}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }

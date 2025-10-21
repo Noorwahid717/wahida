@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: ankane/pgvector:latest
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_DB: wahida_prod
+      POSTGRES_USER: ${POSTGRES_USER:-wahida}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wahida_prod_password}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./infra/postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
+    command: ["-c", "config_file=/etc/postgresql/postgresql.conf"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wahida}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.prod
+    env_file:
+      - .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - APP_NAME=Wahida API Production
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
+      - POSTGRES_DSN=${POSTGRES_DSN}
+      - REDIS_URL=${REDIS_URL}
+      - JUDGE0_URL=${JUDGE0_URL}
+      - JUDGE0_RAPIDAPI_KEY=${JUDGE0_RAPIDAPI_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_GEMINI_API_KEY=${GOOGLE_GEMINI_API_KEY}
+      - POSTHOG_API_KEY=${POSTHOG_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - RATE_LIMIT_PER_MINUTE_CHAT=${RATE_LIMIT_PER_MINUTE_CHAT:-10}
+      - RATE_LIMIT_PER_MINUTE_RUN=${RATE_LIMIT_PER_MINUTE_RUN:-5}
+    volumes:
+      - ./content:/content:ro
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  celery:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.prod
+    env_file:
+      - .env.production
+    depends_on:
+      - redis
+      - postgres
+      - api
+    environment:
+      - APP_NAME=Wahida API Production
+      - POSTGRES_DSN=${POSTGRES_DSN}
+      - REDIS_URL=${REDIS_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_GEMINI_API_KEY=${GOOGLE_GEMINI_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    volumes:
+      - ./content:/content:ro
+      - ./data:/app/data
+    command: ["celery", "-A", "app.tasks", "worker", "--loglevel=info", "--concurrency=2"]
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile.prod
+    env_file:
+      - .env.production
+    depends_on:
+      - api
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+      - NEXT_PUBLIC_POSTHOG_KEY=${NEXT_PUBLIC_POSTHOG_KEY}
+      - NEXT_PUBLIC_POSTHOG_HOST=${NEXT_PUBLIC_POSTHOG_HOST}
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    restart: unless-stopped
+
+volumes:
+  postgres_prod_data:

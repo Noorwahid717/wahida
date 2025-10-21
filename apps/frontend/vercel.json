@@ -1,0 +1,19 @@
+{
+  "buildCommand": "pnpm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "pnpm install",
+  "env": {
+    "NEXT_PUBLIC_API_BASE_URL": "@next-public-api-base-url",
+    "NEXT_PUBLIC_SUPABASE_URL": "@next-public-supabase-url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next-public-supabase-anon-key",
+    "NEXT_PUBLIC_POSTHOG_KEY": "@next-public-posthog-key",
+    "NEXT_PUBLIC_POSTHOG_HOST": "@next-public-posthog-host"
+  },
+  "regions": ["sin1"],
+  "functions": {
+    "src/app/**/*.ts": {
+      "maxDuration": 10
+    }
+  }
+}

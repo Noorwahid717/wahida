@@ -8,7 +8,7 @@ import ReactMarkdown from "react-markdown";
 export const revalidate = 60;
 
 interface MaterialPageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 const CONTENT_DIR = path.join(process.cwd(), "content");
@@ -63,28 +63,29 @@ export async function generateStaticParams() {
 }
 
 export default async function MaterialPage({ params }: MaterialPageProps) {
-  const material = await getMaterial(params.slug);
+  const resolvedParams = await params;
+  const material = await getMaterial(resolvedParams.slug);
   const navigation = await getClassNavigation();
   if (!material) {
     return <div className="p-12 text-sm text-red-500">Materi tidak ditemukan.</div>;
   }
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-background">
       {/* Sidebar Navigation */}
-      <aside className="w-64 bg-white shadow-lg p-6 overflow-y-auto">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">Navigasi Kelas</h2>
+      <aside className="w-64 bg-card shadow-lg p-6 overflow-y-auto border-r">
+        <h2 className="text-lg font-semibold text-card-foreground mb-4">Navigasi Kelas</h2>
         {Object.entries(navigation).map(([grade, materials]) => (
           <div key={grade} className="mb-6">
-            <h3 className="text-md font-medium text-slate-700 mb-2">Kelas {grade}</h3>
+            <h3 className="text-md font-medium text-muted-foreground mb-2">Kelas {grade}</h3>
             <ul className="space-y-1">
               {materials.map((mat) => (
                 <li key={mat.slug}>
                   <Link
                     href={`/materials/${mat.slug}`}
                     className={`block px-3 py-2 rounded-md text-sm ${
-                      mat.slug === params.slug
-                        ? "bg-indigo-100 text-indigo-700 font-medium"
-                        : "text-slate-600 hover:bg-slate-100"
+                      mat.slug === resolvedParams.slug
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                     }`}
                   >
                     {mat.title}
@@ -100,31 +101,31 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
       <main className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
           <header className="mb-8">
-            <h1 className="text-4xl font-bold text-slate-900 mb-2">
-              {String(material.metadata.title ?? params.slug)}
+            <h1 className="text-4xl font-bold text-foreground mb-2">
+              {String(material.metadata.title ?? resolvedParams.slug)}
             </h1>
-            <p className="text-lg text-slate-600">
+            <p className="text-lg text-muted-foreground">
               Kelas {material.grade} · Topik {String(material.metadata.topik)} · Level {String(material.metadata.level)}
             </p>
             <div className="mt-4 flex gap-2">
-              <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
+              <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
                 {material.grade}
               </span>
-              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+              <span className="px-3 py-1 bg-accent text-accent-foreground rounded-full text-sm font-medium">
                 {String(material.metadata.topik)}
               </span>
             </div>
           </header>
-          <article className="prose prose-lg max-w-none bg-white p-8 rounded-lg shadow-sm">
+          <article className="prose prose-lg dark:prose-invert max-w-none bg-card p-8 rounded-lg shadow-sm border">
             <ReactMarkdown
               components={{
-                h1: ({ children }) => <h1 className="text-3xl font-bold text-slate-900 mb-4">{children}</h1>,
-                h2: ({ children }) => <h2 className="text-2xl font-semibold text-slate-800 mb-3">{children}</h2>,
-                p: ({ children }) => <p className="text-slate-700 mb-4 leading-relaxed">{children}</p>,
-                ul: ({ children }) => <ul className="list-disc list-inside text-slate-700 mb-4 space-y-1">{children}</ul>,
-                ol: ({ children }) => <ol className="list-decimal list-inside text-slate-700 mb-4 space-y-1">{children}</ol>,
-                code: ({ children }) => <code className="bg-slate-100 px-2 py-1 rounded text-sm font-mono">{children}</code>,
-                pre: ({ children }) => <pre className="bg-slate-100 p-4 rounded overflow-x-auto">{children}</pre>,
+                h1: ({ children }) => <h1 className="text-3xl font-bold text-foreground mb-4">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-2xl font-semibold text-foreground mb-3">{children}</h2>,
+                p: ({ children }) => <p className="text-card-foreground mb-4 leading-relaxed">{children}</p>,
+                ul: ({ children }) => <ul className="list-disc list-inside text-card-foreground mb-4 space-y-1">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal list-inside text-card-foreground mb-4 space-y-1">{children}</ol>,
+                code: ({ children }) => <code className="bg-muted px-2 py-1 rounded text-sm font-mono text-foreground">{children}</code>,
+                pre: ({ children }) => <pre className="bg-muted p-4 rounded overflow-x-auto">{children}</pre>,
               }}
             >
               {material.content}

@@ -3,24 +3,6 @@ import { http, HttpResponse } from "msw";
 export const handlers = [
   // Mock Chat API
   http.post("http://localhost:8000/api/chat", async () => {
-    // Simulate streaming chunks
-    const chunks = [
-      {
-        type: "chunk",
-        text: "Persamaan linear adalah bentuk ax + b = c.",
-        metadata: { kelas: "X", topik: "Persamaan Linear" },
-        score: 0.9,
-        hintsRevealed: 0,
-      },
-      {
-        type: "chunk",
-        text: "Untuk menyelesaikan, kurangkan b dari kedua sisi.",
-        metadata: { kelas: "X", topik: "Persamaan Linear" },
-        score: 0.8,
-        hintsRevealed: 1,
-      },
-    ];
-
     // Simulate delay for streaming
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -42,8 +24,8 @@ export const handlers = [
   }),
 
   http.post("http://localhost:8000/api/quiz/:questionId", async ({ request }) => {
-    const body = await request.json();
-    const isCorrect = body.selected_index === 1; // Mock correct answer
+    const body = await request.json() as { selected_index: number };
+    const isCorrect = body?.selected_index === 1; // Mock correct answer
     return HttpResponse.json({
       correct: isCorrect,
       submitted_at: new Date().toISOString(),
@@ -62,10 +44,10 @@ export const handlers = [
 
   // Mock Run API
   http.post("http://localhost:8000/api/run", async ({ request }) => {
-    const body = await request.json();
+    const body = await request.json() as { language: string; source: string };
     // Mock code execution
     return HttpResponse.json({
-      stdout: `Executed ${body.language} safely: ${body.source.slice(0, 50)}...`,
+      stdout: `Executed ${body?.language || 'python'} safely: ${body?.source?.slice(0, 50) || ''}...`,
       status: "completed",
       execution_time_ms: 150,
     });

@@ -1,0 +1,35 @@
+# Leapcell deployment config for FastAPI
+
+name: wahida-api
+runtime: python3.11
+entrypoint: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+env:
+  - name: APP_NAME
+    value: Wahida API
+  - name: BACKEND_CORS_ORIGINS
+    value: http://localhost:3000,https://wahida.vercel.app
+  - name: POSTGRES_DSN
+    value: ${POSTGRES_DSN}
+  - name: REDIS_URL
+    value: ${REDIS_URL}
+  - name: JUDGE0_URL
+    value: ${JUDGE0_URL}
+  - name: JUDGE0_RAPIDAPI_KEY
+    value: ${JUDGE0_RAPIDAPI_KEY}
+  - name: OPENAI_API_KEY
+    value: ${OPENAI_API_KEY}
+  - name: GOOGLE_GEMINI_API_KEY
+    value: ${GOOGLE_GEMINI_API_KEY}
+  - name: POSTHOG_API_KEY
+    value: ${POSTHOG_API_KEY}
+  - name: MODERATION_BLOCKLIST_PATH
+    value: ${MODERATION_BLOCKLIST_PATH}
+  - name: RATE_LIMIT_PER_MINUTE_CHAT
+    value: "20"
+  - name: RATE_LIMIT_PER_MINUTE_RUN
+    value: "10"
+  - name: SUPABASE_URL
+    value: ${SUPABASE_URL}
+  - name: SUPABASE_ANON_KEY
+    value: ${SUPABASE_ANON_KEY}

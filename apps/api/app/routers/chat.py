@@ -67,7 +67,7 @@ async def _generate_events(
         await asyncio.sleep(0.05)
 
     # Generate adaptive response using LLM
-    llm_response = rag_service.generate_response(payload.message, retrieved)
+    llm_response = await rag_service.generate_response(payload.message, retrieved)
     yield f"data: {json.dumps({'type': 'response', 'text': llm_response}, ensure_ascii=False)}\n\n"
 
     yield "event: status\n" "data: {\"type\": \"completed\"}\n\n"
